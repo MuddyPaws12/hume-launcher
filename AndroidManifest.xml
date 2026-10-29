@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Normal-level permission: lets us try reading apps' published TV rows for the top shelf. -->
     <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
+    <!-- Continue Watching: apps' Watch Next rows (runtime prompt; the TV provider's own permission). -->
+    <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
 
     <queries>
         <intent>
@@ -40,6 +42,8 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="https" />
         </intent>
+        <!-- Continue Watching: the TV provider's Watch Next list. -->
+        <provider android:authorities="android.media.tv" />
     </queries>
 
     <application
@@ -92,11 +96,11 @@
             <meta-data android:name="android.accessibilityservice" android:resource="@xml/power_service" />
         </service>
 
-        <!-- Continue Watching: reads the media sessions apps publish while playing. -->
+        <!-- Do Not Disturb: notification access (the name is kept so earlier grants still apply). -->
         <service
             android:name=".MediaWatchService"
             android:exported="true"
-            android:label="Hume Launcher – Continue Watching"
+            android:label="Hume Launcher – Do Not Disturb"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
