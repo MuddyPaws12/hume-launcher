@@ -36,6 +36,7 @@ public class SettingsActivity extends Activity {
     protected void onCreate(Bundle b) {
         super.onCreate(b);
         Clicks.init(this);
+        Motion.init(this);
         String token = getIntent().getStringExtra("tmdb_token");
         if (token != null && !token.trim().isEmpty()) {
             Suggestions.prefs(this).edit().putString(Suggestions.K_TOKEN, token.trim()).apply();
@@ -80,6 +81,7 @@ public class SettingsActivity extends Activity {
         scroller.addView(list);
         split.addView(scroller, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1.25f));
         setContentView(root);
+        Clicks.quiet(root);
         show(ROOT);
     }
 
@@ -88,6 +90,7 @@ public class SettingsActivity extends Activity {
         lastPage = page;
         page = p;
         list.removeAllViews();
+        rowsByLabel.clear();
         refreshers.clear();
         navRows.clear();
         buildLeft(p);
@@ -97,7 +100,7 @@ public class SettingsActivity extends Activity {
             case PRESENT: pagePresentation(); break;
             case INPUTS: pageInputs(); break;
             case WEATHER: pageWeather(); break;
-            case WATCHING: pageWatching(); break;
+            case WATCHING: pageShelf(); break;  // older deep links: Continue Watching now lives in Top Shelf
             case HOME: pageHome(); break;
             case PERMS: pagePermissions(); break;
             case ABOUT: pageAbout(); break;
@@ -116,8 +119,12 @@ public class SettingsActivity extends Activity {
         }
         if (focus != null) focus.requestFocus();
         list.setAlpha(0f);
-        list.setTranslationX(Ui.px(this, p.equals(ROOT) ? -16 : 16));
-        list.animate().alpha(1f).translationX(0).setDuration(220).start();
+        list.setTranslationX(Motion.dist(Ui.px(this, p.equals(ROOT) ? -16 : 16)));
+        list.animate().alpha(1f).translationX(0).setDuration(Motion.d(220)).start();
+        // Rows settle in one after another (tvOS Settings).
+        List<android.view.View> rows = new ArrayList<>();
+        for (int i = 0; i < list.getChildCount(); i++) rows.add(list.getChildAt(i));
+        Motion.cascade(rows, Ui.px(this, 8));
     }
 
     @Override
@@ -134,7 +141,8 @@ public class SettingsActivity extends Activity {
 
     @Override
     public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
-        refreshAll();
+        if (SHELF.equals(page)) show(SHELF);  // allowed: the sources' options appear
+        else refreshAll();
     }
 
     /** Left side: the page's icon (Petrobot on the main list), its title, and the brand line. */
@@ -227,18 +235,17 @@ public class SettingsActivity extends Activity {
     void pageRoot() {
         nav(PROFILES, () -> Profiles.current(this).name);
         nav(SHELF, () -> {
-            switch (Suggestions.shelf(this)) {
-                case Suggestions.SHELF_RECS: return "Recommendations";
-                case Suggestions.SHELF_NEWS: return "News";
-                case Suggestions.SHELF_NONE: return "Off";
-                default: return "Recommendations & News";
-            }
+            // What the carousel shows, in its order: Continue Watching, apps' rows, recommendations, news.
+            List<String> on = new ArrayList<>();
+            if (cwOn()) on.add("Continue Watching");
+            if (appRowsOn()) on.add("Apps");
+            if (Suggestions.showRecs(this)) on.add("Recommendations");
+            if (Suggestions.showNews(this)) on.add("News");
+            return on.isEmpty() ? "Off" : on.size() > 2 ? on.size() + " sources" : String.join(" & ", on);
         });
         nav(PRESENT, () -> com.petrobot.hume.present.Presenter.enabled(this) ? "On" : "Off");
         if (!Inputs.list(this).isEmpty()) nav(INPUTS, () -> Inputs.showCard(this) ? "On" : "Off");
         nav(WEATHER, () -> !Weather.enabled(this) ? "Off" : Weather.place(this).isEmpty() ? "On" : Weather.place(this));
-        nav(WATCHING, () -> !Profiles.homePrefs(this).getBoolean("cw_enabled", true) ? "Off" : Perms.hasTvListings(this) ? "On"
-                : WatchNext.supported() ? "Needs permission" : "Not on this TV");
         nav(HOME, () -> {
             String k = Profiles.homePrefs(this).getString("wallpaper", "aurora");
             int i = java.util.Arrays.asList(MainActivity.WALL_KEYS).indexOf(k);
@@ -264,24 +271,67 @@ public class SettingsActivity extends Activity {
                 () -> Profiles.setAskOnWake(this, !Profiles.askOnWake(this)));
     }
 
+    /** Continue Watching shows for this profile (switched on and allowed). */
+    boolean cwOn() {
+        return Profiles.homePrefs(this).getBoolean("cw_enabled", true) && WatchNext.granted(this);
+    }
+
+    boolean appRowsOn() {
+        return Profiles.homePrefs(this).getBoolean("app_rows", true) && WatchNext.granted(this);
+    }
+
+    /** On / Off for a source that reads the TV's lists, or what it still needs. */
+    String tvSourceState(String key) {
+        if (!WatchNext.supported()) return "Not on this TV";
+        if (!WatchNext.granted(this)) return "Allow\u2026";
+        return Profiles.homePrefs(this).getBoolean(key, true) ? "On" : "Off";
+    }
+
+    /** Toggles a TV-list source; asks for the TV-listings permission first when it's missing. */
+    void toggleTvSource(String key, String label) {
+        if (!WatchNext.supported()) {
+            Toast.makeText(this, label + " needs Android TV 8 or later.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (!WatchNext.granted(this)) {
+            Profiles.homePrefs(this).edit().putBoolean(key, true).apply();
+            Perms.requestTvListings(this);
+            return;
+        }
+        Profiles.homePrefs(this).edit().putBoolean(key, !Profiles.homePrefs(this).getBoolean(key, true)).apply();
+        AppRows.invalidate();
+        showAndFocus(SHELF, label);  // each source's options appear or go
+    }
+
+    /**
+     * Top Shelf: every source of the carousel as a switch, in the carousel's own order, then each
+     * one's options. (Continue Watching used to have its own page; it plays here, so it lives here.)
+     */
     void pageShelf() {
-        row("Show in carousel", () -> {
-            switch (Suggestions.shelf(this)) {
-                case Suggestions.SHELF_RECS: return "Recommendations";
-                case Suggestions.SHELF_NEWS: return "News";
-                case Suggestions.SHELF_NONE: return "Nothing";
-                default: return "Both";
-            }
-        }, () -> {
-            String[] keys = {Suggestions.SHELF_BOTH, Suggestions.SHELF_RECS, Suggestions.SHELF_NEWS, Suggestions.SHELF_NONE};
-            String[] names = {"Recommendations & News", "Recommendations", "News", "Nothing"};
-            int sel = Math.max(0, java.util.Arrays.asList(keys).indexOf(Suggestions.shelf(this)));
-            dialog("Show in carousel").setSingleChoiceItems(names, sel, (d, w) -> {
-                Suggestions.setShelf(this, keys[w]);
-                d.dismiss();
-                show(SHELF);
-            }).show();
+        row("Continue Watching", () -> tvSourceState("cw_enabled"), () -> toggleTvSource("cw_enabled", "Continue Watching"));
+        row("From Your Apps", () -> tvSourceState("app_rows"), () -> toggleTvSource("app_rows", "From Your Apps"));
+        row("Recommendations", () -> Suggestions.showRecs(this) ? "On" : "Off", () -> {
+            Suggestions.setShelf(this, !Suggestions.showRecs(this), Suggestions.showNews(this));
+            showAndFocus(SHELF, "Recommendations");
         });
+        row("News", () -> Suggestions.showNews(this) ? "On" : "Off", () -> {
+            Suggestions.setShelf(this, Suggestions.showRecs(this), !Suggestions.showNews(this));
+            showAndFocus(SHELF, "News");
+        });
+        if (cwOn()) {
+            section("Continue Watching");
+            row("Clear history", () -> "", () -> {
+                WatchNext.dismissAll(this);
+                Toast.makeText(this, "Continue Watching cleared", Toast.LENGTH_SHORT).show();
+            });
+        }
+        if (appRowsOn()) {
+            section("From Your Apps");
+            row("Apps", () -> {
+                int n = AppRows.hidden(this).size();
+                return n == 0 ? "All" : n + " hidden";
+            }, this::chooseRowApps);
+        }
         if (Suggestions.showRecs(this)) {
             section("Recommendations");
             row("Source", () -> Suggestions.sourceName(Suggestions.source(this)), this::chooseSource);
@@ -347,6 +397,37 @@ public class SettingsActivity extends Activity {
                 Toast.makeText(this, "The carousel will refresh on Home", Toast.LENGTH_SHORT).show();
             });
         }
+    }
+
+    /** Which apps' rows the carousel uses (apps that publish rows on this TV). */
+    void chooseRowApps() {
+        new Thread(() -> {
+            List<String> pkgs = new ArrayList<>(AppRows.load(this).byApp.keySet());
+            runOnUiThread(() -> {
+                if (pkgs.isEmpty()) {
+                    Toast.makeText(this, "None of your apps publish rows on this TV yet. Open them once and check again.",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+                String[] names = new String[pkgs.size()];
+                boolean[] on = new boolean[names.length];
+                Set<String> hidden = AppRows.hidden(this);
+                for (int i = 0; i < names.length; i++) {
+                    try {
+                        names[i] = String.valueOf(getPackageManager().getApplicationLabel(
+                                getPackageManager().getApplicationInfo(pkgs.get(i), 0)));
+                    } catch (Exception e) {
+                        names[i] = pkgs.get(i);
+                    }
+                    on[i] = !hidden.contains(pkgs.get(i));
+                }
+                dialog("Apps in the carousel").setMultiChoiceItems(names, on, (d, w, checked) -> on[w] = checked)
+                        .setPositiveButton("Done", (d, w) -> {
+                            for (int i = 0; i < on.length; i++) AppRows.setHidden(this, pkgs.get(i), !on[i]);
+                            refreshAll();
+                        }).setNegativeButton("Cancel", null).show();
+            });
+        }).start();
     }
 
     void chooseNewsrooms() {
@@ -452,20 +533,6 @@ public class SettingsActivity extends Activity {
         });
     }
 
-    void pageWatching() {
-        row("Show Continue Watching", () -> Profiles.homePrefs(this).getBoolean("cw_enabled", true) ? "On" : "Off", () -> {
-            boolean on = !Profiles.homePrefs(this).getBoolean("cw_enabled", true);
-            Profiles.homePrefs(this).edit().putBoolean("cw_enabled", on).apply();
-            if (!on) Toast.makeText(this, "Continue Watching titles won\u2019t appear in the carousel", Toast.LENGTH_SHORT).show();
-        });
-        row("Apps\u2019 Watch Next lists", () -> Perms.hasTvListings(this) ? "Allowed"
-                : WatchNext.supported() ? "Allow\u2026" : "Not on this TV", () -> Perms.requestTvListings(this));
-        row("Clear history", () -> "", () -> {
-            WatchNext.dismissAll(this);
-            Toast.makeText(this, "Continue Watching cleared", Toast.LENGTH_SHORT).show();
-        });
-    }
-
     void pageHome() {
         row("Home screen", () -> Perms.isDefaultHome(this) ? "Hume Launcher" : "Make Hume the home screen\u2026",
                 () -> Perms.requestDefaultHome(this));
@@ -482,8 +549,44 @@ public class SettingsActivity extends Activity {
                 d.dismiss();
             }).show();
         });
+        row("Home button opens Hume", () -> PowerService.HomeButton.isDefaultHome(this) ? "Not needed"
+                : !PowerService.HomeButton.enabled(this) ? "Off"
+                : Perms.hasAccessibility(this) ? "On" : "Needs Hume\u2019s switch\u2026", this::toggleHomeButton);
+        section("Start with the TV");
+        row("Open", () -> Startup.label(this), this::chooseStartup);
+        if (!Startup.target(this).isEmpty()) {
+            row("When", () -> Startup.onWake(this) ? "When the TV starts or wakes" : "When the TV starts", () -> {
+                String[] names = {"When the TV starts", "When the TV starts or wakes from standby"};
+                dialog("Open it").setSingleChoiceItems(names, Startup.onWake(this) ? 1 : 0, (d, w) -> {
+                    Startup.setOnWake(this, w == 1);
+                    d.dismiss();
+                    refreshAll();
+                    if (w == 1 && !Perms.hasAccessibility(this)) {
+                        Perms.requestAccessibility(this, "Android lets Hume open an app when the TV wakes only "
+                                + "with Hume\u2019s accessibility switch on.");
+                    }
+                }).show();
+            });
+            if (Startup.onWake(this) && !Perms.hasAccessibility(this)) {
+                row("Waking into it", () -> "Needs Hume\u2019s switch\u2026", () -> Perms.requestAccessibility(this,
+                        "Android lets Hume open an app when the TV wakes only with Hume\u2019s accessibility switch on."));
+            }
+            if (com.petrobot.hume.present.Presenter.enabled(this) && com.petrobot.hume.present.Presenter.startOnBoot(this)) {
+                row("At boot", () -> "Presentation starts instead", () -> show(PRESENT));
+            }
+        }
+        section("Motion & Sound");
+        row("Motion", () -> Motion.NAMES[Motion.level()], () -> {
+            String[] names = {"Full  (default)", "Reduced \u2014 shorter, no drifting or swaying", "Off \u2014 changes are instant"};
+            dialog("Motion").setSingleChoiceItems(names, Motion.level(), (d, w) -> {
+                Motion.set(this, w);
+                d.dismiss();
+                refreshAll();
+            }).show();
+        });
         row("Navigation sounds", () -> Clicks.enabled(this) ? "On" : "Off",
                 () -> Clicks.setEnabled(this, !Clicks.enabled(this)));
+        section("Home Screen");
         row("Full-screen carousel when idle", () -> {
             int sec = Profiles.homePrefs(this).getInt("idle_sec", 20);
             return sec == 0 ? "Off" : "After " + sec + " s";
@@ -532,7 +635,48 @@ public class SettingsActivity extends Activity {
         });
     }
 
+    /** Home button override: on/off, asking for the accessibility switch when it's needed. */
+    void toggleHomeButton() {
+        if (PowerService.HomeButton.isDefaultHome(this)) {
+            Toast.makeText(this, "Hume is already the home app, so the Home button opens it.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        boolean on = PowerService.HomeButton.enabled(this);
+        if (on && !Perms.hasAccessibility(this)) {
+            Perms.requestAccessibility(this, "This TV keeps its own home screen. With Hume\u2019s switch on, Hume opens "
+                    + "whenever that home screen appears, so the Home button brings you here.");
+            return;
+        }
+        PowerService.HomeButton.setEnabled(this, !on);
+        refreshAll();
+    }
+
+    /** Start with the TV: Home Screen, a TV input, or an app. */
+    void chooseStartup() {
+        List<String> targets = new ArrayList<>(), names = new ArrayList<>();
+        targets.add("");
+        names.add("Home Screen  (default)");
+        for (Inputs.Input in : Inputs.list(this)) {
+            if (in.usb) continue;
+            targets.add("input:" + in.id);
+            names.add(in.label);
+        }
+        for (String[] app : Startup.apps(this)) {
+            targets.add("app:" + app[0]);
+            names.add(app[1]);
+        }
+        int sel = Math.max(0, targets.indexOf(Startup.target(this)));
+        dialog("When the TV turns on, open").setSingleChoiceItems(names.toArray(new String[0]), sel, (d, w) -> {
+            Startup.set(this, targets.get(w), w == 0 ? "" : names.get(w));
+            d.dismiss();
+            showAndFocus(HOME, "Open");
+        }).show();
+    }
+
     void pagePermissions() {
+        row("Home button & Start with the TV", () -> Perms.hasAccessibility(this) ? "Allowed" : "Allow\u2026",
+                () -> Perms.requestAccessibility(this, "Hume\u2019s switch lets it open itself when the TV\u2019s own "
+                        + "home screen appears, and open your chosen app when the TV wakes."));
         row("Continue Watching (apps\u2019 Watch Next)", () -> Perms.hasTvListings(this) ? "Allowed"
                 : WatchNext.supported() ? "Allow\u2026" : "Not on this TV", () -> Perms.requestTvListings(this));
         row("Do Not Disturb", () -> Perms.hasListener(this) ? "Allowed"
@@ -615,8 +759,19 @@ public class SettingsActivity extends Activity {
     }
 
     /** A settings row: label left, current value right; focus lifts it onto a light plate. */
+    /** This page's rows by label, so a page rebuilt after a choice can keep focus on that row. */
+    final java.util.Map<String, android.view.View> rowsByLabel = new java.util.HashMap<>();
+
+    /** Rebuilds a page (its rows can change after a choice) and keeps focus on the row just used. */
+    void showAndFocus(String p, String label) {
+        show(p);
+        android.view.View v = rowsByLabel.get(label);
+        if (v != null) v.requestFocus();
+    }
+
     android.view.View row(String label, Value value, Runnable action) {
         LinearLayout r = new LinearLayout(this);
+        rowsByLabel.put(label, r);
         r.setOrientation(LinearLayout.HORIZONTAL);
         r.setGravity(Gravity.CENTER_VERTICAL);
         r.setFocusable(true);
@@ -649,7 +804,7 @@ public class SettingsActivity extends Activity {
             bg.setColor(has ? 0xF2FFFFFF : 0x14FFFFFF);
             l.setTextColor(has ? 0xFF111114 : Color.WHITE);
             v.setTextColor(has ? 0x99111114 : 0x99FFFFFF);
-            view.animate().withLayer().scaleX(has ? 1.03f : 1f).scaleY(has ? 1.03f : 1f).setDuration(180).start();
+            view.animate().withLayer().scaleX(has ? 1.03f : 1f).scaleY(has ? 1.03f : 1f).setDuration(Motion.d(180)).start();
         });
         r.setOnClickListener(view -> {
             action.run();
@@ -664,11 +819,11 @@ public class SettingsActivity extends Activity {
     @Override
     public boolean dispatchKeyEvent(android.view.KeyEvent ev) {
         MainActivity.navSound(this, ev);
-        return super.dispatchKeyEvent(ev);
+        return super.dispatchKeyEvent(ev) || Clicks.moveFocus(getWindow(), ev);
     }
 
     AlertDialog.Builder dialog(String title) {
-        return new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle(title);
+        return Clicks.dialog(this).setTitle(title);
     }
 
     void refreshAll() {
@@ -684,7 +839,7 @@ public class SettingsActivity extends Activity {
             Suggestions.changed(this);
             refreshAll();
             d.dismiss();
-            show(SHELF);
+            showAndFocus(SHELF, "Source");
             if (w == 1 && !Suggestions.hasToken(this)) enterToken();
         }).show();
     }

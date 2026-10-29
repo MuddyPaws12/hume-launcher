@@ -44,6 +44,11 @@
         </intent>
         <!-- Continue Watching: the TV provider's Watch Next list. -->
         <provider android:authorities="android.media.tv" />
+        <!-- Home button override: the TV's own launcher(s), to recognise their home screen. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
     </queries>
 
     <application
@@ -88,7 +93,7 @@
         <service
             android:name=".PowerService"
             android:exported="true"
-            android:label="Hume Launcher – Power Off"
+            android:label="Hume Launcher"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
