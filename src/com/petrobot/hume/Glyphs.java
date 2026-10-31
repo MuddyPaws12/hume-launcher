@@ -307,21 +307,21 @@ final class Glyphs {
                 c.drawRect(r, dot);
                 break;
             }
-            case "bluetooth": {  // Feather Icons Bluetooth (MIT, Cole Bemis) — stroke polyline, scaled to fill canvas
+            case "bluetooth": {  // Feather Icons Bluetooth (MIT, Cole Bemis) — stroke polyline, scaled to match WiFi visual weight
                 p.setStyle(Paint.Style.STROKE);
                 path.reset();
                 float sc = s / 24.0f;
-                // Scale path to use ~85% of canvas (like wifi), centered
-                float inset = s * 0.075f;  // ~1.8px at 24px, ~7.5% inset
+                // Scale to ~65% of canvas (matches WiFi visual weight)
+                float inset = s * 0.175f;
                 float cx = s / 2f;
-                float span = (s - 2 * inset) * 0.85f;  // 85% of available space
+                float span = (s - 2 * inset) * 0.65f;
                 float start = cx - span / 2f;
                 float end = cx + span / 2f;
                 float mid = cx;
                 path.moveTo(start, start);
                 path.lineTo(end, end);
-                path.lineTo(mid, end + span * 0.32f);  // top point extends up
-                path.lineTo(mid, start - span * 0.32f);  // bottom point extends down
+                path.lineTo(mid, end + span * 0.25f);
+                path.lineTo(mid, start - span * 0.25f);
                 path.lineTo(end, start);
                 path.lineTo(start, end);
                 c.drawPath(path, p);
