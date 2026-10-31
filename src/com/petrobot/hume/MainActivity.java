@@ -3184,7 +3184,8 @@ public class MainActivity extends Activity {
                 }));
         cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false,
                 v -> {
-                    Intent bt = new Intent("com.google.android.intent.action.CONNECT_INPUT");
+                    Intent bt = new Intent("android.settings.SLICE_SETTINGS");
+                    bt.putExtra("slice_uri", "content://com.google.android.tv.btservices.settings.sliceprovider/general");
                     bt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     if (bt.resolveActivity(getPackageManager()) != null) {
                         startActivity(bt);
