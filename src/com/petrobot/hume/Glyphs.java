@@ -307,20 +307,30 @@ final class Glyphs {
                 c.drawRect(r, dot);
                 break;
             }
-            case "bluetooth": {  // Bluetooth bind rune: vertical spine with two right-pointing triangles meeting at center
-                p.setStyle(Paint.Style.FILL);
+            case "bluetooth": {  // Material Design Icons Bluetooth (Apache 2.0, Pictogrammers)
+                p.setStyle(Paint.Style.STROKE);
                 path.reset();
-                // Vertical spine
-                path.addRect(s * 0.485f, s * 0.22f, s * 0.515f, s * 0.78f, Path.Direction.CW);
-                // Top triangle pointing right
-                path.moveTo(s * 0.515f, s * 0.30f);
-                path.lineTo(s * 0.80f, s * 0.40f);
-                path.lineTo(s * 0.515f, s * 0.50f);
-                path.close();
-                // Bottom triangle pointing right
-                path.moveTo(s * 0.515f, s * 0.50f);
-                path.lineTo(s * 0.80f, s * 0.60f);
-                path.lineTo(s * 0.515f, s * 0.70f);
+                float sc = s / 24.0f;
+                path.moveTo(14.88f * sc, 16.29f * sc);
+                path.lineTo(13.0f * sc, 18.17f * sc);
+                path.lineTo(13.0f * sc, 14.41f * sc);
+                path.moveTo(13.0f * sc, 5.83f * sc);
+                path.lineTo(14.88f * sc, 7.71f * sc);
+                path.lineTo(13.0f * sc, 9.58f * sc);
+                path.moveTo(17.71f * sc, 7.71f * sc);
+                path.lineTo(12.0f * sc, 2.0f * sc);
+                path.lineTo(11.0f * sc, 2.0f * sc);
+                path.lineTo(11.0f * sc, 9.58f * sc);
+                path.lineTo(6.41f * sc, 5.0f * sc);
+                path.lineTo(5.0f * sc, 6.41f * sc);
+                path.lineTo(10.59f * sc, 12.0f * sc);
+                path.lineTo(5.0f * sc, 17.58f * sc);
+                path.lineTo(6.41f * sc, 19.0f * sc);
+                path.lineTo(11.0f * sc, 14.41f * sc);
+                path.lineTo(11.0f * sc, 22.0f * sc);
+                path.lineTo(12.0f * sc, 22.0f * sc);
+                path.lineTo(17.71f * sc, 16.29f * sc);
+                path.lineTo(13.41f * sc, 12.0f * sc);
                 path.close();
                 c.drawPath(path, p);
                 break;
