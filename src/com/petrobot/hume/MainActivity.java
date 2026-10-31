@@ -3480,12 +3480,11 @@ public class MainActivity extends Activity {
         BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
         if (adapter == null || !adapter.isEnabled()) return "Off";
         try {
-            if (android.os.Build.VERSION.SDK_INT >= 30) {
-                java.util.List<android.bluetooth.BluetoothDevice> devs = adapter.getConnectedDevices();
-                if (!devs.isEmpty()) {
-                    String name = devs.get(0).getName();
-                    return name != null ? name : "Connected";
-                }
+            java.util.Set<android.bluetooth.BluetoothDevice> devs = adapter.getBondedDevices();
+            if (!devs.isEmpty()) {
+                android.bluetooth.BluetoothDevice d = devs.iterator().next();
+                String name = d.getName();
+                return name != null ? name : "Connected";
             }
         } catch (Exception ignored) { }
         return "On";

@@ -324,18 +324,6 @@ final class Glyphs {
                 c.drawPath(path, p);
                 break;
             }
-            case "hdmi": {  // HDMI connector: trapezoid with cable
-                p.setStyle(Paint.Style.STROKE);
-                path.reset();
-                path.moveTo(s * 0.30f, s * 0.30f);
-                path.lineTo(s * 0.70f, s * 0.30f);
-                path.lineTo(s * 0.60f, s * 0.68f);
-                path.lineTo(s * 0.40f, s * 0.68f);
-                path.close();
-                c.drawPath(path, p);
-                c.drawLine(s * 0.50f, s * 0.68f, s * 0.50f, s * 0.85f, p);
-                break;
-            }
             case "refresh": {  // circular arrow
                 r.set(s * 0.2f, s * 0.2f, s * 0.8f, s * 0.8f);
                 c.drawArc(r, -60, 300, false, p);
