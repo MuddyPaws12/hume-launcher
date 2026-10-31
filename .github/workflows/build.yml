@@ -1,0 +1,50 @@
+name: Build Hume Launcher APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Install Android SDK command-line tools
+        run: |
+          mkdir -p $HOME/Android/cmdline-tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d $HOME/Android/cmdline-tools
+          mv $HOME/Android/cmdline-tools/cmdline-tools $HOME/Android/cmdline-tools/latest
+          rm cmdline-tools.zip
+          echo "ANDROID_HOME=$HOME/Android/Sdk" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$HOME/Android/Sdk" >> $GITHUB_ENV
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          mv $HOME/Android/cmdline-tools/latest $ANDROID_HOME/cmdline-tools/latest
+
+      - name: Install Android SDK platform and build-tools
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --sdk_root=$ANDROID_HOME "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Build APK
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hume-launcher-apk
+          path: build/tvos-home.apk
+          retention-days: 7
