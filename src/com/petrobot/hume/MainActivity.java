@@ -3184,14 +3184,15 @@ public class MainActivity extends Activity {
                 }));
         cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false,
                 v -> {
-                    // Try CONNECT_INPUT first (opens pairing screen, works on Android TV)
-                    Intent bt = new Intent("com.google.android.intent.action.CONNECT_INPUT");
+                    // Try CONNECT_INPUT first (resolves to AddAccessoryActivity - Bluetooth pairing)
+                    Intent bt = new Intent();
+                    bt.setComponent(new ComponentName("com.android.tv.settings", "com.android.tv.settings.accessories.AddAccessoryActivity"));
                     bt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     if (bt.resolveActivity(getPackageManager()) != null) {
                         startActivity(bt);
                         return;
                     }
-                    // Fallback: open TV Settings main (always works)
+                    // Fallback: TV Settings main
                     Intent tvSettings = new Intent();
                     tvSettings.setComponent(new ComponentName("com.android.tv.settings", "com.android.tv.settings.MainSettings"));
                     tvSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
