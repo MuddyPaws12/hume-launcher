@@ -3184,9 +3184,9 @@ public class MainActivity extends Activity {
                 }));
         cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false,
                 v -> {
-                    Intent bt = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
+                    Intent bt = new Intent("com.google.android.intent.action.CONNECT_INPUT");
+                    bt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     if (bt.resolveActivity(getPackageManager()) != null) {
-                        bt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(bt);
                     }
                 }));
