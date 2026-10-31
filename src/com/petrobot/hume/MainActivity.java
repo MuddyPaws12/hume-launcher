@@ -3184,8 +3184,10 @@ public class MainActivity extends Activity {
                 }));
         cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false,
                 v -> {
-                    if (!Suggestions.start(this, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS))) {
-                        startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+                    Intent bt = new Intent(Settings.ACTION_BLUETOOTH_SETTINGS);
+                    if (bt.resolveActivity(getPackageManager()) != null) {
+                        bt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(bt);
                     }
                 }));
         // Row 2: Sleep Timer | Power Off
