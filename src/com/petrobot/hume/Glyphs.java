@@ -307,31 +307,16 @@ final class Glyphs {
                 c.drawRect(r, dot);
                 break;
             }
-            case "bluetooth": {  // Material Design Icons Bluetooth (Apache 2.0, Pictogrammers)
+            case "bluetooth": {  // Feather Icons Bluetooth (MIT, Cole Bemis) — stroke polyline
                 p.setStyle(Paint.Style.STROKE);
                 path.reset();
                 float sc = s / 24.0f;
-                path.moveTo(14.88f * sc, 16.29f * sc);
-                path.lineTo(13.0f * sc, 18.17f * sc);
-                path.lineTo(13.0f * sc, 14.41f * sc);
-                path.moveTo(13.0f * sc, 5.83f * sc);
-                path.lineTo(14.88f * sc, 7.71f * sc);
-                path.lineTo(13.0f * sc, 9.58f * sc);
-                path.moveTo(17.71f * sc, 7.71f * sc);
-                path.lineTo(12.0f * sc, 2.0f * sc);
-                path.lineTo(11.0f * sc, 2.0f * sc);
-                path.lineTo(11.0f * sc, 9.58f * sc);
-                path.lineTo(6.41f * sc, 5.0f * sc);
-                path.lineTo(5.0f * sc, 6.41f * sc);
-                path.lineTo(10.59f * sc, 12.0f * sc);
-                path.lineTo(5.0f * sc, 17.58f * sc);
-                path.lineTo(6.41f * sc, 19.0f * sc);
-                path.lineTo(11.0f * sc, 14.41f * sc);
-                path.lineTo(11.0f * sc, 22.0f * sc);
-                path.lineTo(12.0f * sc, 22.0f * sc);
-                path.lineTo(17.71f * sc, 16.29f * sc);
-                path.lineTo(13.41f * sc, 12.0f * sc);
-                path.close();
+                path.moveTo(6.5f * sc, 6.5f * sc);
+                path.lineTo(17.5f * sc, 17.5f * sc);
+                path.lineTo(12.0f * sc, 23.0f * sc);
+                path.lineTo(12.0f * sc, 1.0f * sc);
+                path.lineTo(17.5f * sc, 6.5f * sc);
+                path.lineTo(6.5f * sc, 17.5f * sc);
                 c.drawPath(path, p);
                 break;
             }
