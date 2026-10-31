@@ -307,19 +307,20 @@ final class Glyphs {
                 c.drawRect(r, dot);
                 break;
             }
-            case "bluetooth": {  // Bluetooth bind rune: vertical spine with two right-pointing triangles
+            case "bluetooth": {  // Bluetooth bind rune: vertical spine with two opposing right-pointing triangles
                 p.setStyle(Paint.Style.STROKE);
-                c.drawLine(s * 0.5f, s * 0.25f, s * 0.5f, s * 0.75f, p);
+                c.drawLine(s * 0.5f, s * 0.22f, s * 0.5f, s * 0.78f, p);
+                p.setStyle(Paint.Style.FILL);
                 path.reset();
-                path.moveTo(s * 0.5f, s * 0.33f);
-                path.lineTo(s * 0.72f, s * 0.45f);
-                path.lineTo(s * 0.5f, s * 0.57f);
+                path.moveTo(s * 0.5f, s * 0.34f);
+                path.lineTo(s * 0.74f, s * 0.44f);
+                path.lineTo(s * 0.5f, s * 0.54f);
                 path.close();
                 c.drawPath(path, p);
                 path.reset();
-                path.moveTo(s * 0.5f, s * 0.43f);
-                path.lineTo(s * 0.72f, s * 0.55f);
-                path.lineTo(s * 0.5f, s * 0.67f);
+                path.moveTo(s * 0.5f, s * 0.46f);
+                path.lineTo(s * 0.74f, s * 0.56f);
+                path.lineTo(s * 0.5f, s * 0.66f);
                 path.close();
                 c.drawPath(path, p);
                 break;

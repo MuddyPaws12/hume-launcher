@@ -3183,7 +3183,11 @@ public class MainActivity extends Activity {
                     else Suggestions.start(this, new Intent(Settings.ACTION_WIFI_SETTINGS));
                 }));
         cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false,
-                v -> Suggestions.start(this, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS))));
+                v -> {
+                    if (!Suggestions.start(this, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS))) {
+                        startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+                    }
+                }));
         // Row 2: Sleep Timer | Power Off
         int y2 = cap + gap;
         cells.add(ccTile(panel, 0, y2, col, cap, "timer", "Sleep Timer", this::timerState, false,
@@ -3193,7 +3197,7 @@ public class MainActivity extends Activity {
         }));
         // Row 3: round shortcuts — Do Not Disturb, Voice Assistant, Input, Settings.
         int y3 = y2 + cap + gap;
-        String[] g = new String[]{"dnd", "mic", "hdmi", "gear"};
+        String[] g = new String[]{"moon", "mic", "hdmi", "gear"};
         for (int i = 0; i < g.length; i++) {
             String name = g[i];
             cells.add(ccTile(panel, i * (small + gap), y3, small, small, name, null, null, false, v -> {
