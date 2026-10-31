@@ -3184,11 +3184,19 @@ public class MainActivity extends Activity {
                 }));
         cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false,
                 v -> {
-                    Intent bt = new Intent("android.settings.SLICE_SETTINGS");
-                    bt.putExtra("slice_uri", "content://com.google.android.tv.btservices.settings.sliceprovider/general");
-                    bt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    // Try CONNECT_INPUT first (opens pairing screen, works on Android TV)
+                    Intent bt = new Intent("com.google.android.intent.action.CONNECT_INPUT");
+                    bt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
                     if (bt.resolveActivity(getPackageManager()) != null) {
                         startActivity(bt);
+                        return;
+                    }
+                    // Fallback: open TV Settings main (always works)
+                    Intent tvSettings = new Intent();
+                    tvSettings.setComponent(new ComponentName("com.android.tv.settings", "com.android.tv.settings.MainSettings"));
+                    tvSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    if (tvSettings.resolveActivity(getPackageManager()) != null) {
+                        startActivity(tvSettings);
                     }
                 }));
         // Row 2: Sleep Timer | Power Off
