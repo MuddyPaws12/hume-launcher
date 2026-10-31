@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
 import android.app.ActivityOptions;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -3154,9 +3155,10 @@ public class MainActivity extends Activity {
     // ---------------------------------------------------------------- Control Center
 
     /**
-     * tvOS 26 Control Center (per Apple's reference): glass tiles under the status row \u2014
-     * a square Power tile, Wi-Fi and Do Not Disturb capsules, Audio and Sleep Timer capsules,
-     * and a row of round shortcuts. Geometry in design units: 141-wide columns, 13 gaps.
+     * tvOS 26 Control Center: glass tiles under the status row —
+     * Wi-Fi and Bluetooth capsules, Sleep Timer and Power Off capsules,
+     * and a row of round shortcuts (Do Not Disturb, Voice Assistant, Input, Settings).
+     * Geometry in design units: 141-wide columns, 13 gaps.
      */
     void showControlCenter() {
         dropPicker();
@@ -3173,59 +3175,47 @@ public class MainActivity extends Activity {
         panel.setClipChildren(false);
         List<View> cells = new ArrayList<>();
 
-        // Row 1: Power | Memory (used bar; OK cleans). Row 2: Wi-Fi | Do Not Disturb.
-        cells.add(ccTile(panel, 0, 0, col, cap, "power", "Power Off", null, false, v -> {
-            if (!SleepReceiver.sleepNow(this)) Perms.requestAdmin(this);
-        }));
-        View mem = ccTile(panel, col + gap, 0, col, cap, "memory", "Memory", this::memoryState, false, v -> cleanMemory());
-        addMemoryBar(mem);
-        cells.add(mem);
-        cells.add(ccTile(panel, 0, cap + gap, col, cap, "wifi", "Wi-Fi", this::wifiName, false,
+        // Row 1: Wi-Fi | Bluetooth. Row 2: Sleep Timer | Power Off.
+        cells.add(ccTile(panel, 0, 0, col, cap, "wifi", "Wi-Fi", this::wifiName, false,
                 v -> {
                     // The network name needs location access on Android 9+: ask on screen the first time.
                     if (!Perms.hasLocation(this)) Perms.requestLocation(this);
                     else Suggestions.start(this, new Intent(Settings.ACTION_WIFI_SETTINGS));
                 }));
-        cells.add(ccTile(panel, col + gap, cap + gap, col, cap, "moon", "Do Not Disturb", this::dndState, false,
-                v -> toggleDnd()));
-        // Row 3: Audio | Sleep Timer
-        int y3 = 2 * (cap + gap);
-        cells.add(ccTile(panel, 0, y3, col, cap, "audio", "Audio", this::audioOutput, false,
-                v -> Suggestions.start(this, new Intent("android.settings.SOUND_SETTINGS"))));
-        cells.add(ccTile(panel, col + gap, y3, col, cap, "timer", "Sleep Timer", this::timerState, false,
+        cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false,
+                v -> Suggestions.start(this, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS))));
+        // Row 2: Sleep Timer | Power Off
+        int y2 = cap + gap;
+        cells.add(ccTile(panel, 0, y2, col, cap, "timer", "Sleep Timer", this::timerState, false,
                 v -> cycleSleepTimer()));
-        // Row 4: Motion | Sounds (OK cycles Full / Reduced / Off; toggles navigation sounds).
-        int yMs = y3 + cap + gap;
-        cells.add(ccTile(panel, 0, yMs, col, cap, "motion", "Motion", () -> Motion.NAMES[Motion.level()], false,
-                v -> Motion.cycle(this)));
-        cells.add(ccTile(panel, col + gap, yMs, col, cap, "sound", "Sounds", () -> Clicks.enabled(this) ? "On" : "Off", false,
-                v -> Clicks.setEnabled(this, !Clicks.enabled(this))));
-        // Row 5: round shortcuts \u2014 Inputs (TVs with inputs) or Accessibility, controllers, Settings, Search.
-        int y4 = yMs + cap + gap;
-        String[] g = inputs.isEmpty() ? new String[]{"gamepad", "accessibility", "gear", "search"}
-                : new String[]{"input", "gamepad", "gear", "search"};
+        cells.add(ccTile(panel, col + gap, y2, col, cap, "power", "Power Off", null, false, v -> {
+            if (!SleepReceiver.sleepNow(this)) Perms.requestAdmin(this);
+        }));
+        // Row 3: round shortcuts — Do Not Disturb, Voice Assistant, Input, Settings.
+        int y3 = y2 + cap + gap;
+        String[] g = new String[]{"dnd", "mic", "hdmi", "gear"};
         for (int i = 0; i < g.length; i++) {
             String name = g[i];
-            cells.add(ccTile(panel, i * (small + gap), y4, small, small, name, null, null, false, v -> {
+            cells.add(ccTile(panel, i * (small + gap), y3, small, small, name, null, null, false, v -> {
                 switch (name) {
-                    case "gamepad": Suggestions.start(this, new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)); break;
-                    case "accessibility": Suggestions.start(this, new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)); break;
-                    case "input":
+                    case "dnd": toggleDnd(); break;
+                    case "mic":
+                        if (!Suggestions.start(this, new Intent(Intent.ACTION_ASSIST))) {
+                            Suggestions.start(this, new Intent("android.search.action.GLOBAL_SEARCH"));
+                        }
+                        break;
+                    case "hdmi":
                         showInputs(ccButton);
                         return;
                     case "gear":
                         returningFromSettings = true;
                         startActivity(new Intent(this, SettingsActivity.class));
                         break;
-                    default:
-                        if (!Suggestions.start(this, new Intent(Intent.ACTION_ASSIST))) {
-                            Suggestions.start(this, new Intent("android.search.action.GLOBAL_SEARCH"));
-                        }
                 }
                 closeProfilePicker();
             }));
         }
-        int h = y4 + small;
+        int h = y3 + small;
         FrameLayout.LayoutParams plp = new FrameLayout.LayoutParams(w, h, Gravity.TOP | Gravity.END);
         plp.topMargin = dp(72);
         plp.rightMargin = dockOuter;
@@ -3484,6 +3474,21 @@ public class MainActivity extends Activity {
     String timerState() {
         int left = SleepReceiver.timerLeft(this);
         return left > 0 ? left + " min left" : "Off";
+    }
+
+    String bluetoothState() {
+        BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null || !adapter.isEnabled()) return "Off";
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                java.util.List<android.bluetooth.BluetoothDevice> devs = adapter.getConnectedDevices();
+                if (!devs.isEmpty()) {
+                    String name = devs.get(0).getName();
+                    return name != null ? name : "Connected";
+                }
+            }
+        } catch (Exception ignored) { }
+        return "On";
     }
 
     /** Off \u2192 15 \u2192 30 \u2192 60 \u2192 90 \u2192 Off. */

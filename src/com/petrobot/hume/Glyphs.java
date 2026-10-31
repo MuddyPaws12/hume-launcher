@@ -307,6 +307,35 @@ final class Glyphs {
                 c.drawRect(r, dot);
                 break;
             }
+            case "bluetooth": {  // Bluetooth bind rune: vertical spine with two right-pointing triangles
+                p.setStyle(Paint.Style.STROKE);
+                c.drawLine(s * 0.5f, s * 0.25f, s * 0.5f, s * 0.75f, p);
+                path.reset();
+                path.moveTo(s * 0.5f, s * 0.33f);
+                path.lineTo(s * 0.72f, s * 0.45f);
+                path.lineTo(s * 0.5f, s * 0.57f);
+                path.close();
+                c.drawPath(path, p);
+                path.reset();
+                path.moveTo(s * 0.5f, s * 0.43f);
+                path.lineTo(s * 0.72f, s * 0.55f);
+                path.lineTo(s * 0.5f, s * 0.67f);
+                path.close();
+                c.drawPath(path, p);
+                break;
+            }
+            case "hdmi": {  // HDMI connector: trapezoid with cable
+                p.setStyle(Paint.Style.STROKE);
+                path.reset();
+                path.moveTo(s * 0.30f, s * 0.30f);
+                path.lineTo(s * 0.70f, s * 0.30f);
+                path.lineTo(s * 0.60f, s * 0.68f);
+                path.lineTo(s * 0.40f, s * 0.68f);
+                path.close();
+                c.drawPath(path, p);
+                c.drawLine(s * 0.50f, s * 0.68f, s * 0.50f, s * 0.85f, p);
+                break;
+            }
             case "refresh": {  // circular arrow
                 r.set(s * 0.2f, s * 0.2f, s * 0.8f, s * 0.8f);
                 c.drawArc(r, -60, 300, false, p);
