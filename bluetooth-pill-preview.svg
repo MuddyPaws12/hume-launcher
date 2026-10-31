@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 400 100">
+  <!-- Background -->
+  <rect width="400" height="100" fill="#1a1a2e"/>
+  
+  <!-- Bluetooth Pill (matches Control Center pill dimensions) -->
+  <!-- Pill: 141dp wide, half-height capsule. In design units: 141 x 70.5 -->
+  <!-- Scaled up 2x for visibility: 282 x 141 -->
+  <g transform="translate(20, 20)">
+    <!-- Pill background (glass effect) -->
+    <rect x="0" y="0" width="282" height="141" rx="70.5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    
+    <!-- Bluetooth Icon (centered, blue when ON) -->
+    <!-- Icon size: 54dp for square/capsule glyphs, 30dp for circle glyphs -->
+    <!-- Pill height = 141dp, icon = 54dp (matches ccTile gs for capsules) -->
+    <g transform="translate(141, 70.5)">
+      <!-- Bluetooth glyph - Feather Icons path, scaled to 54dp -->
+      <path d="m6.5 6.5l11 11L12 23V1l5.5 5.5l-11 11" 
+            fill="none" stroke="#0A84FF" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"
+            transform="scale(2.25) translate(-12, -12)"/>
+    </g>
+    
+    <!-- Status text (below icon) -->
+    <text x="141" y="115" text-anchor="middle" font-family="system-ui" font-size="14" fill="rgba(255,255,255,0.7)">On • Pixel Buds Pro</text>
+  </g>
+  
+  <!-- WiFi Pill for comparison (left side) -->
+  <g transform="translate(320, 20)">
+    <rect x="0" y="0" width="282" height="141" rx="70.5" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+    <g transform="translate(141, 70.5)">
+      <!-- WiFi glyph - 3 arcs + center dot -->
+      <g stroke="#0A84FF" stroke-width="3.8" stroke-linecap="round" fill="none">
+        <path d="M-27,14 A27,27 0 0 1 27,14"/>
+        <path d="M-18,14 A18,18 0 0 1 18,14"/>
+        <path d="M-9,14 A9,9 0 0 1 9,14"/>
+      </g>
+      <circle cx="0" cy="14" r="3" fill="#0A84FF"/>
+    </g>
+    <text x="141" y="115" text-anchor="middle" font-family="system-ui" font-size="14" fill="rgba(255,255,255,0.7)">Wi-Fi • MyNetwork</text>
+  </g>
+  
+  <!-- Labels -->
+  <text x="151" y="10" text-anchor="middle" font-family="system-ui" font-size="16" fill="#888" font-weight="bold">Bluetooth Pill (Click Disabled)</text>
+  <text x="461" y="10" text-anchor="middle" font-family="system-ui" font-size="16" fill="#888" font-weight="bold">Wi-Fi Pill (Reference)</text>
+  
+  <!-- Dimensions -->
+  <text x="200" y="175" text-anchor="middle" font-family="monospace" font-size="12" fill="#666">Pill: 282×141dp (141×70.5 design units) • Icon: 54dp (capsule glyph size) • Gap: 13dp</text>
+</svg>

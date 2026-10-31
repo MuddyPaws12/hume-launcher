@@ -3182,24 +3182,7 @@ public class MainActivity extends Activity {
                     if (!Perms.hasLocation(this)) Perms.requestLocation(this);
                     else Suggestions.start(this, new Intent(Settings.ACTION_WIFI_SETTINGS));
                 }));
-        cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false,
-                v -> {
-                    // Try CONNECT_INPUT first (resolves to AddAccessoryActivity - Bluetooth pairing)
-                    Intent bt = new Intent();
-                    bt.setComponent(new ComponentName("com.android.tv.settings", "com.android.tv.settings.accessories.AddAccessoryActivity"));
-                    bt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    if (bt.resolveActivity(getPackageManager()) != null) {
-                        startActivity(bt);
-                        return;
-                    }
-                    // Fallback: TV Settings main
-                    Intent tvSettings = new Intent();
-                    tvSettings.setComponent(new ComponentName("com.android.tv.settings", "com.android.tv.settings.MainSettings"));
-                    tvSettings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    if (tvSettings.resolveActivity(getPackageManager()) != null) {
-                        startActivity(tvSettings);
-                    }
-                }));
+        cells.add(ccTile(panel, col + gap, 0, col, cap, "bluetooth", "Bluetooth", this::bluetoothState, false, null));
         // Row 2: Sleep Timer | Power Off
         int y2 = cap + gap;
         cells.add(ccTile(panel, 0, y2, col, cap, "timer", "Sleep Timer", this::timerState, false,
