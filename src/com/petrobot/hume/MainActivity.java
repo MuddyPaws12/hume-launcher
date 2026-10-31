@@ -3263,7 +3263,7 @@ public class MainActivity extends Activity {
         t.setPadding(circle ? 0 : dp(16), 0, circle ? 0 : dp(14), 0);
         int gs = square ? dp(54) : circle ? dp(30) : dp(28);
         ImageView gi = new ImageView(this);
-        gi.setImageBitmap(Glyphs.get(glyph, gs, glyph.equals("wifi") ? 0xFF0A84FF : Color.WHITE));
+        gi.setImageBitmap(Glyphs.get(glyph, gs, (glyph.equals("wifi") || glyph.equals("bluetooth")) ? 0xFF0A84FF : Color.WHITE));
         t.addView(gi, new LinearLayout.LayoutParams(gs, gs));
         TextView sub = null;
         TextView[] titleRef = {null};
